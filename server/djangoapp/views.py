@@ -102,18 +102,31 @@ def get_dealerships(request, state="All"):
     dealerships = get_request(endpoint)
     return JsonResponse({"status":200,"dealers":dealerships})
 
+from django.http import JsonResponse
+
 def get_dealer_reviews(request, dealer_id):
-    # if dealer id has been provided
-    if(dealer_id):
-        endpoint = "/fetchReviews/dealer/"+str(dealer_id)
-        reviews = get_request(endpoint)
+    if dealer_id:
+        endpoint = f"/fetchReviews/dealer/{dealer_id}"
+        
+        # Call your helper function to make the HTTP GET request
+        reviews = get_request(endpoint)  # Make sure get_request is implemented properly
+        
+        if reviews is None:
+            # If the request failed or no reviews found
+            return JsonResponse({"status": 404, "message": "Reviews not found"}, status=404)
+        
         for review_detail in reviews:
-            response = analyze_review_sentiments(review_detail['review'])
-            print(response)
-            review_detail['sentiment'] = response['sentiment']
-        return JsonResponse({"status":200,"reviews":reviews})
+            try:
+                response = analyze_review_sentiments(review_detail.get('review', ''))
+                review_detail['sentiment'] = response.get('sentiment', 'neutral')
+            except Exception as e:
+                print(f"Sentiment analysis failed: {e}")
+                review_detail['sentiment'] = 'neutral'
+        
+        return JsonResponse({"status": 200, "reviews": reviews}, status=200)
+    
     else:
-        return JsonResponse({"status":400,"message":"Bad Request"})
+        return JsonResponse({"status": 400, "message": "Bad Request: dealer_id missing"}, status=400)
 
 def get_dealer_details(request, dealer_id):
     if(dealer_id):
