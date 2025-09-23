@@ -38,7 +38,7 @@ def login_user(request):
 
 
 # Create a `logout_request` view to handle sign out request
-def logout_request(request):    
+def logout_request(request):
     logout(request)   # Terminate user session
     data = {"userName": ""}    # Return empty username
     return JsonResponse(data)
@@ -63,13 +63,14 @@ def registration(request):
         username_exist = True
     except Exception as e:
         # If not, simply log this is a new user
-        logger.debug("{} is new user".format(username))
+        logger.debug("%s is new user. Exception: %s", username, e)
 
     # If it is a new user
     if not username_exist:
         # Create user in auth_user table
         user = User.objects.create_user(username=username,
-                                        first_name=first_name, last_name=last_name,
+                                        first_name=first_name,
+                                        last_name=last_name,
                                         password=password, email=email)
         # Login the user and redirect to list page
         login(request, user)
@@ -89,7 +90,7 @@ def get_cars(request):
     cars = []
     for car_model in car_models:
         cars.append({"CarModel": car_model.name,
-         "CarMake": car_model.car_make.name})
+                     "CarMake": car_model.car_make.name})
     return JsonResponse({"CarModels": cars})
 
 
@@ -133,10 +134,10 @@ def add_review(request):
         data = json.loads(request.body)
         try:
             response = post_review(data)
-            return JsonResponse({"status": 200})
-        except:
+            return JsonResponse({"status": 200, "result": response})
+        except Exception as e:
             return JsonResponse({"status": 401,
-                   "message": "Error in posting review"})
+                                 "message": "Error in posting review",
+                                 "error": str(e)})
     else:
         return JsonResponse({"status": 403, "message": "Unauthorized"})
-
